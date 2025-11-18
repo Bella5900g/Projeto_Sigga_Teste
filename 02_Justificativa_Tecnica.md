@@ -232,31 +232,6 @@ automacao_cypress/
 
 ---
 
-## 4. Próximos Passos e Evolução
-
-### Fase 1 (MVP Atual):
-- ✅ Testes E2E completos (Login + CRUD Completo: Create, Read, Update, Delete)
-- ✅ Page Object Model (POM) implementado com 3 Page Objects
-- ✅ Custom Commands (`cy.login()`, `cy.logout()`)
-- ✅ Data Test IDs em todos os seletores
-- ✅ Fixtures para dados de teste
-- ✅ Interceptação de requisições HTTP (POST, PUT, DELETE, GET)
-- ✅ Método para deletar múltiplas tarefas (`deletarTodasTarefas()`)
-
-### Fase 2 (Expansão):
-- [ ] Integração com BDD (Cucumber)
-- [ ] Testes de API
-- [ ] Testes de acessibilidade (axe-core)
-- [ ] Testes de performance (Lighthouse)
-
-### Fase 3 (Maturidade):
-- [ ] Visual Regression Testing
-- [ ] Testes cross-browser automatizados
-- [ ] Integração completa com CI/CD
-- [ ] Dashboard de métricas
-
----
-
 ## Conclusão
 
 A escolha do Cypress, combinada com as boas práticas de Page Object Model, Custom Commands, Data Test IDs e Fixtures, estabelece uma base sólida e escalável para a automação de testes na Sigga. Esta arquitetura permite:
