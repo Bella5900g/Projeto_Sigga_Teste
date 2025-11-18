@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarefas - Sistema de Tarefas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .content {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .acoes {
+            margin-bottom: 2rem;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 1rem;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .formulario {
+            background: white;
+            padding: 2rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .formulario.visivel {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .botoes-form {
+            display: flex;
+            gap: 1rem;
+        }
+        .sucesso {
+            background: #d4edda;
+            color: #155724;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .sucesso.visivel {
+            display: block;
+        }
+        .lista-tarefas {
+            background: white;
+            padding: 2rem;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tarefa {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+        }
+        .tarefa h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .tarefa p {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .tarefa .prioridade {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .prioridade.Alta {
+            background: #fee;
+            color: #c33;
+        }
+        .prioridade.Média {
+            background: #ffe;
+            color: #c93;
+        }
+        .prioridade.Baixa {
+            background: #efe;
+            color: #3c3;
+        }
+        .tarefa button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        .cancelar {
+            background: #6c757d;
+        }
+        .cancelar:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Gerenciamento de Tarefas</h1>
+        <a href="/dashboard" style="color: white; text-decoration: none;">Voltar ao Dashboard</a>
+    </div>
+    <div class="content">
+        <div class="acoes">
+            <button data-testid="botao-criar-tarefa" onclick="mostrarFormulario()">Criar Nova Tarefa</button>
+        </div>
+
+        <div id="mensagemSucesso" data-testid="mensagem-sucesso" class="sucesso"></div>
+
+        <div id="formularioTarefa" class="formulario">
+            <h2 id="tituloForm">Nova Tarefa</h2>
+            <form id="formTarefa">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="titulo">Título</label>
+                    <input type="text" id="titulo" data-testid="campo-titulo-tarefa" required>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição</label>
+                    <textarea id="descricao" data-testid="campo-descricao-tarefa" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="prioridade">Prioridade</label>
+                    <select id="prioridade" data-testid="campo-prioridade-tarefa" required>
+                        <option value="Alta">Alta</option>
+                        <option value="Média">Média</option>
+                        <option value="Baixa">Baixa</option>
+                    </select>
+                </div>
+                <div class="botoes-form">
+                    <button type="submit" data-testid="botao-salvar-tarefa">Salvar</button>
+                    <button type="button" data-testid="botao-cancelar-tarefa" class="cancelar" onclick="ocultarFormulario()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lista-tarefas" data-testid="lista-tarefas">
+            <h2>Lista de Tarefas</h2>
+            <div id="tarefasContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let tarefaEditando = null;
+
+        async function carregarTarefas() {
+            try {
+                const response = await fetch('/api/tarefas', {
+                    credentials: 'include'
+                });
+                const tarefas = await response.json();
+                renderizarTarefas(tarefas);
+            } catch (error) {
+                console.error('Erro ao carregar tarefas:', error);
+            }
+        }
+
+        function renderizarTarefas(tarefas) {
+            const container = document.getElementById('tarefasContainer');
+            container.innerHTML = '';
+            
+            tarefas.forEach(tarefa => {
+                const slug = tarefa.titulo.toLowerCase().replace(/\s+/g, '-');
+                const div = document.createElement('div');
+                div.className = 'tarefa';
+                div.setAttribute('data-testid', `tarefa-${slug}`);
+                div.innerHTML = `
+                    <h3>${tarefa.titulo}</h3>
+                    <p>${tarefa.descricao}</p>
+                    <span class="prioridade ${tarefa.prioridade}">${tarefa.prioridade}</span>
+                    <div>
+                        <button data-testid="botao-editar-tarefa" onclick="editarTarefa(${tarefa.id})">Editar</button>
+                        <button data-testid="botao-deletar-tarefa" onclick="deletarTarefa(${tarefa.id}, '${tarefa.titulo}')">Deletar</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function mostrarFormulario() {
+            document.getElementById('formularioTarefa').classList.add('visivel');
+            document.getElementById('tituloForm').textContent = 'Nova Tarefa';
+            document.getElementById('formTarefa').reset();
+            tarefaEditando = null;
+        }
+
+        function ocultarFormulario() {
+            document.getElementById('formularioTarefa').classList.remove('visivel');
+            tarefaEditando = null;
+        }
+
+        async function editarTarefa(id) {
+            try {
+                const response = await fetch('/api/tarefas', {
+                    credentials: 'include'
+                });
+                const tarefas = await response.json();
+                const tarefa = tarefas.find(t => t.id === id);
+                
+                if (tarefa) {
+                    document.getElementById('titulo').value = tarefa.titulo;
+                    document.getElementById('descricao').value = tarefa.descricao;
+                    document.getElementById('prioridade').value = tarefa.prioridade;
+                    document.getElementById('formularioTarefa').classList.add('visivel');
+                    document.getElementById('tituloForm').textContent = 'Editar Tarefa';
+                    tarefaEditando = id;
+                }
+            } catch (error) {
+                console.error('Erro ao editar tarefa:', error);
+            }
+        }
+
+        async function deletarTarefa(id, titulo) {
+            if (!confirm(`Tem certeza que deseja deletar a tarefa "${titulo}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/tarefas/${id}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const mensagem = document.getElementById('mensagemSucesso');
+                    mensagem.textContent = data.message;
+                    mensagem.classList.add('visivel');
+                    
+                    setTimeout(() => {
+                        mensagem.classList.remove('visivel');
+                    }, 3000);
+                    
+                    carregarTarefas();
+                } else {
+                    alert('Erro ao deletar tarefa: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao deletar tarefa:', error);
+                alert('Erro ao deletar tarefa');
+            }
+        }
+
+        document.getElementById('formTarefa').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const titulo = document.getElementById('titulo').value;
+            const descricao = document.getElementById('descricao').value;
+            const prioridade = document.getElementById('prioridade').value;
+            
+            try {
+                let response;
+                if (tarefaEditando) {
+                    response = await fetch(`/api/tarefas/${tarefaEditando}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({ titulo, descricao, prioridade }),
+                        credentials: 'include'
+                    });
+                } else {
+                    response = await fetch('/api/tarefas', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({ titulo, descricao, prioridade }),
+                        credentials: 'include'
+                    });
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const mensagem = document.getElementById('mensagemSucesso');
+                    mensagem.textContent = data.message;
+                    mensagem.classList.add('visivel');
+                    
+                    setTimeout(() => {
+                        mensagem.classList.remove('visivel');
+                    }, 3000);
+                    
+                    ocultarFormulario();
+                    carregarTarefas();
+                }
+            } catch (error) {
+                console.error('Erro ao salvar tarefa:', error);
+            }
+        });
+
+        // Carregar tarefas ao carregar a página
+        carregarTarefas();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,21 @@
+{
+  "credenciaisValidas": {
+    "email": "usuario@teste.com",
+    "senha": "senha123"
+  },
+  "credenciaisInvalidas": {
+    "email": "usuario@invalido.com",
+    "senha": "senhaErrada"
+  },
+  "dadosTarefa": {
+    "titulo": "Tarefa de Teste Automatizado",
+    "descricao": "Esta é uma tarefa criada por um teste automatizado",
+    "prioridade": "Alta"
+  },
+  "dadosTarefaAtualizada": {
+    "titulo": "Tarefa Atualizada",
+    "descricao": "Descrição atualizada pelo teste automatizado",
+    "prioridade": "Média"
+  }
+}
+

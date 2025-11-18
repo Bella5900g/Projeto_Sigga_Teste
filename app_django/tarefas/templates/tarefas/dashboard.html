@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Tarefas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .content {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        .bem-vindo {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .menu {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        button, a {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1rem;
+        }
+        button:hover, a:hover {
+            background: #5568d3;
+        }
+        .logout {
+            background: #dc3545;
+        }
+        .logout:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 data-testid="titulo-dashboard">Dashboard</h1>
+        <button data-testid="botao-logout" class="logout" onclick="fazerLogout()">Logout</button>
+    </div>
+    <div class="content">
+        <div class="bem-vindo">
+            <h2 data-testid="mensagem-bem-vindo">Bem-vindo ao Sistema de Gerenciamento de Tarefas!</h2>
+        </div>
+        <div class="menu">
+            <a href="/tarefas" data-testid="menu-tarefas">Gerenciar Tarefas</a>
+        </div>
+    </div>
+
+    <script>
+        async function fazerLogout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = data.redirect;
+                }
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+

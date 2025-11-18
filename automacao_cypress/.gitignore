@@ -1,0 +1,8 @@
+node_modules/
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+.nyc_output/
+coverage/
+*.log
+

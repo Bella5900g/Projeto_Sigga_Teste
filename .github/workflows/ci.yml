@@ -1,0 +1,131 @@
+name: 🧪 CI/CD - Testes Automatizados
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  test:
+    name: 🚀 Executar Testes E2E
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Instalar dependências Python
+        working-directory: ./app_django
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🗄️ Executar migrações do banco de dados
+        working-directory: ./app_django
+        run: |
+          python manage.py migrate --noinput
+
+      - name: 🚀 Iniciar servidor Django em background
+        working-directory: ./app_django
+        run: |
+          python manage.py runserver 3000 &
+          echo "Servidor Django iniciado na porta 3000"
+        env:
+          DJANGO_SETTINGS_MODULE: sigga_app.settings
+
+      - name: ⏳ Aguardar servidor Django estar pronto
+        run: |
+          echo "⏳ Aguardando servidor Django iniciar..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3000/login > /dev/null 2>&1; then
+              echo "✅ Servidor Django está rodando!"
+              exit 0
+            fi
+            echo "Tentativa $i/30 - Aguardando..."
+            sleep 2
+          done
+          echo "❌ Timeout: Servidor Django não iniciou"
+          exit 1
+
+      - name: 📦 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: automacao_cypress/package-lock.json
+
+      - name: 📥 Instalar dependências do Cypress
+        working-directory: ./automacao_cypress
+        run: |
+          npm ci
+          echo "✅ Dependências instaladas"
+
+      - name: 🧪 Executar testes Cypress
+        working-directory: ./automacao_cypress
+        run: |
+          echo "🚀 Iniciando execução dos testes E2E..."
+          npm test
+        env:
+          CYPRESS_baseUrl: http://localhost:3000
+
+      - name: 📊 Upload de vídeos dos testes (se falharem)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-videos
+          path: automacao_cypress/cypress/videos
+          retention-days: 7
+
+      - name: 📸 Upload de screenshots (se falharem)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: automacao_cypress/cypress/screenshots
+          retention-days: 7
+
+      - name: ✅ Resumo da execução
+        if: always()
+        run: |
+          echo "## 🎯 Resultado da Execução do Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "### ✅ Pipeline executado com sucesso!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Todos os testes E2E passaram! 🎉" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Pipeline falhou" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Verifique os logs acima para mais detalhes." >> $GITHUB_STEP_SUMMARY
+            echo "Vídeos e screenshots foram salvos como artefatos." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Etapas Executadas:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. ✅ Checkout do código" >> $GITHUB_STEP_SUMMARY
+          echo "2. ✅ Configuração Python 3.11" >> $GITHUB_STEP_SUMMARY
+          echo "3. ✅ Instalação de dependências Django" >> $GITHUB_STEP_SUMMARY
+          echo "4. ✅ Execução de migrações do banco de dados" >> $GITHUB_STEP_SUMMARY
+          echo "5. ✅ Inicialização do servidor Django (porta 3000)" >> $GITHUB_STEP_SUMMARY
+          echo "6. ✅ Configuração Node.js 18" >> $GITHUB_STEP_SUMMARY
+          echo "7. ✅ Instalação de dependências Cypress" >> $GITHUB_STEP_SUMMARY
+          echo "8. ✅ Execução dos testes E2E" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tempo de execução:** ~2-3 minutos" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Testes executados:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Fluxo completo: Login + CRUD + Logout" >> $GITHUB_STEP_SUMMARY
+          echo "- Validação de login com credenciais inválidas" >> $GITHUB_STEP_SUMMARY
+

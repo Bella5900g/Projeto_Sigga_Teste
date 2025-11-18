@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Tarefas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .erro {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .erro.visivel {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        <form id="formLogin">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    data-testid="campo-email" 
+                    required 
+                    placeholder="usuario@teste.com"
+                >
+            </div>
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <input 
+                    type="password" 
+                    id="senha" 
+                    data-testid="campo-senha" 
+                    required
+                    placeholder="senha123"
+                >
+            </div>
+            <button type="submit" data-testid="botao-entrar">Entrar</button>
+            <div id="mensagemErro" data-testid="mensagem-erro" class="erro"></div>
+            <a href="#" data-testid="link-esqueci-senha" style="display: block; text-align: center; margin-top: 1rem; color: #667eea; text-decoration: none;">Esqueci minha senha</a>
+        </form>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        document.getElementById('formLogin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const mensagemErro = document.getElementById('mensagemErro');
+            
+            try {
+                // Obtém CSRF token do cookie ou do form
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                  getCookie('csrftoken') || '';
+                
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ email, senha }),
+                    credentials: 'include'
+                });
+                
+                let data;
+                if (response.status === 401) {
+                    data = await response.json();
+                } else if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor');
+                } else {
+                    data = await response.json();
+                }
+                
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    mensagemErro.textContent = data.message || 'Credenciais inválidas';
+                    mensagemErro.classList.add('visivel');
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                mensagemErro.textContent = 'Erro ao fazer login. Tente novamente.';
+                mensagemErro.classList.add('visivel');
+            }
+        });
+    </script>
+</body>
+</html>
+
