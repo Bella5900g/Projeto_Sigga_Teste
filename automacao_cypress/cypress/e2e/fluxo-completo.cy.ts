@@ -38,7 +38,7 @@ describe('Fluxo Completo: Login + CRUD + Logout', () => {
     tarefasPage = new TarefasPage();
   });
 
-  it('deve realizar login, criar tarefa, validar, atualizar e fazer logout', function() {
+  it('deve realizar login, criar tarefa, validar, atualizar, deletar e fazer logout', function() {
     const { credenciaisValidas, dadosTarefa, dadosTarefaAtualizada } = this.dados;
 
     // ========== ETAPA 1: LOGIN ==========

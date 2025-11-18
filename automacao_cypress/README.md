@@ -99,8 +99,8 @@ automacao_cypress/
 - **Ler (Read):** Validação da tarefa na lista
 - **Atualizar (Update):** Edição da tarefa criada
 - Validação da tarefa atualizada
-- **Deletar (Delete):** Deleção de todas as tarefas existentes
-- Validação de que a lista está vazia
+- **Deletar (Delete):** Deleção de todas as tarefas existentes na lista
+- Validação de que a lista está vazia após deleção
 - Logout
 
 ### 2. Validação de Login com Credenciais Inválidas
